@@ -1,0 +1,14 @@
+plt.cla()
+
+
+nombre_de_proie = [item[0] for item in proie_count]
+nombre_de_pred = [item[0] for item in pred_count]
+iterations = [item[1] for item in proie_count]  
+
+
+
+plt.plot(iterations, nombre_de_pred,color ="r", label="pred")
+plt.plot(iterations, nombre_de_proie,color = 'b', label="proie")
+plt.title('nombre de proies et de prédateurs en fonction du temps')
+plt.legend()
+plt.show()

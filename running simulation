@@ -1,0 +1,88 @@
+n_iter = 1000
+grille = np.full((L,L), None, dtype = object)
+liste_proie = []
+liste_pred = []
+
+plt.close()
+
+# Initialisation des espèces sur la grille ------------------------------------------------------------------------------------------------------
+for i in range(n_proie0):
+    x = np.random.randint(0, L-1)
+    y = np.random.randint(0, L-1)
+    age = np.random.randint(0, 30)
+    
+    if  grille[x, y] is None :
+            
+        liste_proie.append(Proie(x, y, age))
+        grille[x, y] = liste_proie[-1]
+
+for i in range(n_pred0):
+    x = np.random.randint(0, L-1)
+    y = np.random.randint(0, L-1)
+    age = np.random.randint(0, 100)
+    reserves = reserves_i
+
+    if  grille[x, y] is None :
+        
+        liste_pred.append(Pred(x, y, age, reserves))
+        grille[x, y] = liste_pred[-1]
+
+proies_x = [proie.x for proie in liste_proie]
+proies_y = [proie.y for proie in liste_proie]
+preds_x = [pred.x for pred in liste_pred]
+preds_y = [pred.y for pred in liste_pred]
+fig,ax = plt.subplots(figsize=(7,5))
+
+plt.xlim(0,L-1)
+plt.ylim(0,L-1)
+
+line_proie, = ax.plot(proies_x, proies_y,"bo",ms=3)
+line_pred, = ax.plot(preds_x, preds_y,"rs",ms=4)
+
+proie_count=[]
+pred_count=[]
+
+def run(t):
+    global liste_proie, liste_pred
+
+    
+# On fait reproduire les espèces -----------------------------------------------------------------------------------------------------------------------
+    for proie in liste_proie:
+        proie.reprod(liste_proie, grille)
+    for pred in liste_pred:
+        pred.reprod(liste_pred, grille)
+# On fait intéragir les espèces -----------------------------------------------------------------------------------------------------------------------
+    for pred in liste_pred:
+        pred.interact(liste_pred, grille)      
+    for proie in liste_proie:
+        proie.interact(liste_proie,grille)
+# On filtre les espèces morts --------------------------------------------------------------------------------------------------------------------------
+    proie_surv = []
+    pred_surv = []
+    
+    for proie_vie in liste_proie:          # Proies morts
+        if not proie_vie.isDead:
+            proie_surv.append(proie_vie)
+    liste_proie = proie_surv
+    
+    for pred_vie in liste_pred:          # Preds morts
+        if not pred_vie.isDead:
+            pred_surv.append(pred_vie)
+    liste_pred = pred_surv
+
+    proie_count.append((len(liste_proie), t))
+    pred_count.append((len(liste_pred), t))
+
+
+
+def animation_func(i):
+    run(i)
+    proies_x = [proie.x for proie in liste_proie]
+    proies_y = [proie.y for proie in liste_proie]
+    preds_x = [pred.x for pred in liste_pred]
+    preds_y = [pred.y for pred in liste_pred]
+    plt.title(i)
+    line_pred.set_data(preds_x,preds_y)
+    line_proie.set_data(proies_x,proies_y)
+
+animation = FuncAnimation(fig, animation_func, frames=np.arange(0, n_iter), interval = 10, repeat=False)

@@ -1,0 +1,121 @@
+%matplotlib ipympl
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+from scipy import integrate
+from copy import copy
+
+
+# Nb initial de proie et predateurs
+n_proie0 = 200
+n_pred0 = 10
+reserves_i = 10
+
+# Limites
+L = 50
+
+# Réserves initiales des predateurs
+reserves0 = 6.0
+
+class Proie(object):
+    global liste_proie, liste_pred, grille
+    
+    def __init__(self, x0, y0, age):
+        self.x = x0
+        self.y = y0
+        self.age = age
+        self.isDead = False
+
+    def interact(self, proies, grille):
+        if grille[self.x, self.y] in liste_pred:
+            self.die(grille)
+
+    def die(self, grille):
+        grille[self.x, self.y] = None
+        self.isDead = True
+
+    def reprod(self, proies, grille):
+        # Vérifier age minimale de reproduction
+        if self.age >= 5:
+            # Définir cellule voisine
+            for i in range(5):
+                dx = np.random.randint(-1, 2)
+                dy = np.random.randint(-1, 2)
+                new_x = self.x + dx
+                new_y = self.y + dy
+                # Vérifier si la cellule voisine est dans la limite et si elle n'est pas déjà occupé par une autre espèce
+                if 0 < new_x < L-1 and 0 < new_y < L-1:
+                    if grille[new_x, new_y] is None :
+                         # Créer nouvelle proie dans cellule voisine
+                        proies.append(Proie(new_x, new_y, 0))
+                        grille[new_x, new_y] = liste_proie[-1]                            
+                         # Remettre age à zero
+                        self.age = 0
+                        return
+        # Si age > 30, RIP
+        if self.age >= 31:
+            self.die(grille)
+        self.age += 1
+
+class Pred(object):
+    global liste_proie, liste_pred, grille
+    
+    def __init__(self, x0, y0, age, reserves0):
+        self.x = x0
+        self.y = y0
+        self.age = age
+        self.reserves = reserves0
+        self.isDead = False
+
+    def interact(self, predateurs, grille):
+        # Vérifier reserves
+        self.reserves -= 0.5
+        if self.reserves <= 20:
+            # Définir cellule voisine
+            for i in range(5):
+                dx = np.random.randint(-1, 2)
+                dy = np.random.randint(-1, 2)
+                new_x = self.x + dx
+                new_y = self.y + dy
+                # Vérifier si la cellule voisine est dans la limite et si elle est  occupé par une proie
+                if 0 < new_x < L-1 and 0 < new_y < L-1:
+                    if isinstance(grille[new_x,new_y],Proie):
+                         # À la chasse!!!
+                        liste_proie.remove(grille[new_x,new_y])
+                        grille[self.x,self.y] = None
+                        self.x = new_x
+                        self.y = new_y
+                        self.reserves += 1
+                        grille[new_x,new_y] = self
+                        # On retire la derniere position, car le predeur a bougé
+                        return
+        if self.reserves <= 0:
+            self.die(grille)
+
+    def die(self, grille):
+        grille[self.x, self.y] = None
+        self.isDead = True
+
+    def reprod(self, predateurs, grille):
+        # Vérifier age minimale de reproduction
+        if self.age >= 20 and self.reserves >= 10 :
+            # Définir cellule voisine
+            for i in range(5):
+                dx = np.random.randint(-1, 2)
+                dy = np.random.randint(-1, 2)
+                new_x = self.x + dx
+                new_y = self.y + dy
+                # Vérifier si la cellule voisine est dans la limite et si elle n'est pas déjà occupé par une autre espèce
+                if 0 < new_x < L-1 and 0 < new_y < L-1:
+                    if grille[new_x, new_y] is None :
+                         # Créer nouveau predateur dans cellule voisine
+                        predateurs.append(Pred(new_x, new_y, 0, self.reserves//2))
+                        grille[new_x, new_y] = liste_pred[-1]                            
+                         # Remettre age à zero
+                        self.age = 0
+                        self.reserves = self.reserves//2
+                        return
+        # Si age > 100, RIP
+        if self.age >= 101:
+            self.die(grille)
+        self.age += 1
